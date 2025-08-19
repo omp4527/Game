@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ball & Movable Paddle Game - Score Counter</title>
+  <style>
+    canvas { background: #eee; display: block; margin: 0 auto; }
+  </style>
+</head>
+<body>
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Ball properties
+let ball = {
+  x: canvas.width / 2,
+  y: 100,
+  radius: 12,
+  dx: 2,
+  dy: 2
+};
+
+// Paddle properties
+let paddle = {
+  width: 100,
+  height: 20,
+  x: canvas.width / 2 - 50,
+  y: canvas.height - 30,
+  color: '#8B5A2B',
+  exists: true
+};
+
+// Time tracking
+let startTime = Date.now();
+
+// Score tracking
+let score = 0;
+
+function drawBall() {
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+  ctx.fillStyle = '#3498db';
+  ctx.fill();
+  ctx.closePath();
+}
+
+function drawPaddle() {
+  if (paddle.exists) {
+    ctx.beginPath();
+    ctx.rect(paddle.x, paddle.y, paddle.width, paddle.height);
+    ctx.fillStyle = paddle.color;
+    ctx.fill();
+    ctx.closePath();
+  }
+}
+
+function drawScore() {
+  ctx.font = "20px Arial";
+  ctx.fillStyle = "#333";
+  ctx.fillText("Score: " + score, 20, 30);
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  drawBall();
+  drawPaddle();
+  drawScore();
+
+  // Time-based speed multiplier
+  let elapsedTime = (Date.now() - startTime) / 1000; // in seconds
+  let speedMultiplier = 1 + elapsedTime / 10; // Increase speed every 10 seconds
+
+  // Ball movement with speed multiplier
+  ball.x += ball.dx * speedMultiplier;
+  ball.y += ball.dy * speedMultiplier;
+
+  // Wall collision
+  if(ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+    ball.dx *= -1;
+  }
+  if(ball.y - ball.radius < 0) {
+    ball.dy *= -1;
+  }
+
+  // Paddle collision
+  if (
+    paddle.exists &&
+    ball.y + ball.radius > paddle.y &&
+    ball.x > paddle.x &&
+    ball.x < paddle.x + paddle.width
+  ) {
+    ball.dy *= -1;
+    ball.y = paddle.y - ball.radius;
+    score++; // Increment score when ball touches paddle
+  }
+
+  // Ball falls below paddle
+  if (ball.y - ball.radius > canvas.height) {
+    alert('Game Over! Ball dropped.\nFinal Score: ' + score);
+    document.location.reload();
+  }
+
+  requestAnimationFrame(draw);
+}
+
+// Move paddle with mouse
+canvas.addEventListener('mousemove', function(e) {
+  if (!paddle.exists) return;
+  let rect = canvas.getBoundingClientRect();
+  let mouseX = e.clientX - rect.left;
+  paddle.x = Math.max(0, Math.min(mouseX - paddle.width / 2, canvas.width - paddle.width));
+});
+
+// Remove paddle on click
+canvas.addEventListener('click', function(e) {
+  if (!paddle.exists) return;
+  let rect = canvas.getBoundingClientRect();
+  let mouseX = e.clientX - rect.left;
+  let mouseY = e.clientY - rect.top;
+  if (
+    mouseX > paddle.x &&
+    mouseX < paddle.x + paddle.width &&
+    mouseY > paddle.y &&
+    mouseY < paddle.y + paddle.height
+  ) {
+    paddle.exists = false;
+  }
+});
+
+draw();
+</script>
+</body>
+</html>
